@@ -44,7 +44,7 @@ jobs:
 
       # Step 7: Upload HTML report as artifact (optional)
       - name: Upload HTML report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Selenium-HTML-Report
           path: reports/report.html
