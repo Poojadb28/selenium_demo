@@ -50,7 +50,6 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 import pytest
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -58,16 +57,13 @@ from selenium.webdriver.support import expected_conditions as EC
 @pytest.fixture
 def setup():
     chrome_options = Options()
-    chrome_options.add_argument("--headless")  # CI mode
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument("--headless")  # Run without GUI
+    chrome_options.add_argument("--no-sandbox")  # Needed for CI
+    chrome_options.add_argument("--disable-dev-shm-usage")  # Avoid resource issues
+    chrome_options.add_argument("--window-size=1920,1080")  # Set window size
 
-    # Use a specific, stable ChromeDriver version
-    driver = webdriver.Chrome(
-        service=Service(ChromeDriverManager(version="116.0.5845.96").install()),
-        options=chrome_options
-    )
+    # Use manually installed ChromeDriver
+    driver = webdriver.Chrome(service=Service("/usr/bin/chromedriver"), options=chrome_options)
     yield driver
     driver.quit()
 
@@ -75,6 +71,7 @@ def test_google_search(setup):
     driver = setup
     driver.get("https://practicetestautomation.com/practice-test-login/")
 
+    # Explicit waits instead of time.sleep
     wait = WebDriverWait(driver, 10)
 
     username_input = wait.until(EC.presence_of_element_located((By.NAME, "username")))
@@ -86,6 +83,7 @@ def test_google_search(setup):
     submit_button = wait.until(EC.element_to_be_clickable((By.ID, "submit")))
     submit_button.click()
 
+    # Wait for page title or a success message element
     wait.until(EC.title_contains("Logged In Successfully"))
-    assert "Logged In Successfully" in driver.title
 
+    assert "Logged In Successfully" in driver.title
