@@ -7,25 +7,44 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+      # Step 1: Checkout repository
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.12'
+      # Step 2: Set up Python
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      # Step 3: Install dependencies from requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    - name: Run tests
-      run: |
-        pytest tests/ --html=reports/report.html --self-contained-html
+      # Step 4: Install Chrome (for Selenium)
+      - name: Install Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip chromium-browser
 
-   
+      # Step 5: Create reports folder
+      - name: Create reports folder
+        run: mkdir -p reports
 
+      # Step 6: Run Selenium tests with Pytest and generate HTML report
+      - name: Run tests
+        run: |
+          pytest tests/ --html=reports/report.html --self-contained-html
+
+      # Step 7: Upload HTML report as artifact (optional)
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v3
+        with:
+          name: Selenium-HTML-Report
+          path: reports/report.html
