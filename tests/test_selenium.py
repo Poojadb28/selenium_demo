@@ -45,6 +45,7 @@
 #     wait.until(EC.title_contains("Logged In Successfully"))
 
 #     assert "Logged In Successfully" in driver.title
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -56,17 +57,15 @@ from selenium.webdriver.support import expected_conditions as EC
 
 @pytest.fixture
 def setup():
-    # Configure Chrome for headless mode (for CI)
     chrome_options = Options()
-    chrome_options.binary_location = "/usr/bin/chromium-browser"  # Use Chromium
-    chrome_options.add_argument("--headless")  # Run without GUI
-    chrome_options.add_argument("--no-sandbox")  # Needed for CI
-    chrome_options.add_argument("--disable-dev-shm-usage")  # Avoid resource issues
-    chrome_options.add_argument("--window-size=1920,1080")  # Set window size
+    chrome_options.add_argument("--headless")  # CI mode
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--window-size=1920,1080")
 
-    # Use WebDriver Manager to install ChromeDriver compatible with Chromium
+    # Use a specific, stable ChromeDriver version
     driver = webdriver.Chrome(
-        service=Service(ChromeDriverManager().install()),
+        service=Service(ChromeDriverManager(version="116.0.5845.96").install()),
         options=chrome_options
     )
     yield driver
@@ -87,7 +86,6 @@ def test_google_search(setup):
     submit_button = wait.until(EC.element_to_be_clickable((By.ID, "submit")))
     submit_button.click()
 
-    # Wait for page title or success message
     wait.until(EC.title_contains("Logged In Successfully"))
-
     assert "Logged In Successfully" in driver.title
+
