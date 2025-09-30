@@ -49,72 +49,49 @@
 #           name: Selenium-HTML-Report
 #           path: reports/report.html
 
-name: Selenium PyTest CI
+name: Selenium Tests
 
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
   pull_request:
-    branches: ["main"]
+    branches: [ "main" ]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install apt deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget unzip gnupg
-
-      - name: Install Python dependencies
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Install Google Chrome (stable .deb)
+    
+      - name: Install Google Chrome 139
         run: |
-          wget -q -O google-chrome-stable_current_amd64.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          wget -q -O google-chrome-stable_current_amd64.deb \
+            https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_139.0.7158.82-1_amd64.deb
           sudo apt install -y ./google-chrome-stable_current_amd64.deb
+          google-chrome --version
 
-      - name: Install matching ChromeDriver
+      - name: Install ChromeDriver for v139
         run: |
-          # get the major Chrome version (e.g., 140)
-          CHROME_MAJOR=$(google-chrome --version 2>/dev/null | awk '{print $3}' | cut -d '.' -f1)
-          if [ -z "$CHROME_MAJOR" ]; then
-            echo "google-chrome not found; trying google-chrome-stable..."
-            CHROME_MAJOR=$(google-chrome-stable --version 2>/dev/null | awk '{print $3}' | cut -d '.' -f1)
-          fi
-          if [ -z "$CHROME_MAJOR" ]; then
-            echo "Error: could not determine Chrome version."
-            exit 1
-          fi
-          echo "Detected Chrome major version: $CHROME_MAJOR"
-          DRIVER_VERSION=$(wget -qO- https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_MAJOR)
-          echo "Resolved ChromeDriver version: $DRIVER_VERSION"
+          DRIVER_VERSION=$(wget -qO- https://chromedriver.storage.googleapis.com/LATEST_RELEASE_139)
+          echo "Using ChromeDriver version: $DRIVER_VERSION"
           wget -N https://chromedriver.storage.googleapis.com/$DRIVER_VERSION/chromedriver_linux64.zip
           unzip -o chromedriver_linux64.zip
           sudo mv -f chromedriver /usr/bin/chromedriver
           sudo chmod +x /usr/bin/chromedriver
           /usr/bin/chromedriver --version
 
-      - name: Create reports folder
-        run: mkdir -p reports
-
-      - name: Run tests
+      - name: Run Selenium tests
         run: |
           pytest tests/ --html=reports/report.html --self-contained-html
-
-      - name: Upload Test Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: pytest-report
-          path: reports/report.html
