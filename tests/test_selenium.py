@@ -50,29 +50,34 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-import pytest
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import pytest
+from webdriver_manager.chrome import ChromeDriverManager
 
 @pytest.fixture
 def setup():
+    # Configure Chrome options for headless mode (CI-friendly)
     chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument("--headless")  # Run without GUI
+    chrome_options.add_argument("--no-sandbox")  # Required for CI
+    chrome_options.add_argument("--disable-dev-shm-usage")  # Avoid resource issues
+    chrome_options.add_argument("--window-size=1920,1080")  # Optional: set window size
 
+    # Automatically download and use the correct ChromeDriver
     driver = webdriver.Chrome(
-        service=Service("/usr/bin/chromedriver"),
+        service=Service(ChromeDriverManager().install()),
         options=chrome_options
     )
+
     yield driver
     driver.quit()
 
-def test_google_search(setup):
+def test_google_login(setup):
     driver = setup
     driver.get("https://practicetestautomation.com/practice-test-login/")
 
+    # Use explicit waits instead of time.sleep
     wait = WebDriverWait(driver, 10)
 
     username_input = wait.until(EC.presence_of_element_located((By.NAME, "username")))
@@ -84,5 +89,8 @@ def test_google_search(setup):
     submit_button = wait.until(EC.element_to_be_clickable((By.ID, "submit")))
     submit_button.click()
 
+    # Wait for page title or success message
     wait.until(EC.title_contains("Logged In Successfully"))
+
+    # Assertion
     assert "Logged In Successfully" in driver.title

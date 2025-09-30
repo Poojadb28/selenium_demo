@@ -49,52 +49,43 @@
 #           name: Selenium-HTML-Report
 #           path: reports/report.html
 
-name: Selenium Tests
+name: Selenium Python Tests
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
 
-    - name: Install Google Chrome 139
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y wget gnupg unzip
-        wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-        sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list'
-        sudo apt-get update
-        sudo apt-get install -y google-chrome-stable=139.0.7158.82-1
-        google-chrome --version
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    - name: Install ChromeDriver
-      run: |
-        CHROME_MAJOR=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f1)
-        DRIVER_VERSION=$(wget -qO- https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_MAJOR)
-        echo "Resolved ChromeDriver version: $DRIVER_VERSION"
-        wget -N https://chromedriver.storage.googleapis.com/$DRIVER_VERSION/chromedriver_linux64.zip
-        unzip -o chromedriver_linux64.zip
-        sudo mv -f chromedriver /usr/bin/chromedriver
-        sudo chmod +x /usr/bin/chromedriver
-        /usr/bin/chromedriver --version
+      - name: Install Google Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget gnupg unzip
+          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list'
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+          google-chrome --version
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Run tests
-      run: |
-        pytest tests/ --html=reports/report.html --self-contained-html
+      - name: Run Selenium tests
+        run: |
+          mkdir -p reports
+          pytest tests/ --html=reports/report.html --self-contained-html
