@@ -46,43 +46,26 @@
 
 #     assert "Logged In Successfully" in driver.title
 
-# tests/test_selenium.py
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-import os
 import pytest
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-def _find_chrome_binary():
-    # prefer common binary locations
-    candidates = [
-        "/usr/bin/google-chrome-stable",
-        "/usr/bin/google-chrome",
-        "/usr/bin/chromium-browser",
-        "/usr/bin/chromium"
-    ]
-    for c in candidates:
-        if os.path.exists(c):
-            return c
-    return None
-
 @pytest.fixture
 def setup():
     chrome_options = Options()
-    chrome_bin = _find_chrome_binary()
-    if chrome_bin:
-        chrome_options.binary_location = chrome_bin
-
-    chrome_options.add_argument("--headless=new")  # use headless mode
+    chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--window-size=1920,1080")
 
-    # Use the chromedriver installed at /usr/bin/chromedriver by the CI workflow
-    driver = webdriver.Chrome(service=Service("/usr/bin/chromedriver"), options=chrome_options)
+    driver = webdriver.Chrome(
+        service=Service("/usr/bin/chromedriver"),
+        options=chrome_options
+    )
     yield driver
     driver.quit()
 
@@ -91,6 +74,7 @@ def test_google_search(setup):
     driver.get("https://practicetestautomation.com/practice-test-login/")
 
     wait = WebDriverWait(driver, 10)
+
     username_input = wait.until(EC.presence_of_element_located((By.NAME, "username")))
     username_input.send_keys("student")
 
