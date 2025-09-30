@@ -122,7 +122,7 @@ jobs:
 
       # 7. Upload HTML report as artifact
       - name: Upload test report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Selenium-Test-Report
           path: reports/report.html
