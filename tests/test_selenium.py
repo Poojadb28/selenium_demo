@@ -46,23 +46,42 @@
 
 #     assert "Logged In Successfully" in driver.title
 
+# tests/test_selenium.py
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+import os
 import pytest
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+def _find_chrome_binary():
+    # prefer common binary locations
+    candidates = [
+        "/usr/bin/google-chrome-stable",
+        "/usr/bin/google-chrome",
+        "/usr/bin/chromium-browser",
+        "/usr/bin/chromium"
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+    return None
+
 @pytest.fixture
 def setup():
     chrome_options = Options()
-    chrome_options.add_argument("--headless")  # Run without GUI
-    chrome_options.add_argument("--no-sandbox")  # Needed for CI
-    chrome_options.add_argument("--disable-dev-shm-usage")  # Avoid resource issues
-    chrome_options.add_argument("--window-size=1920,1080")  # Set window size
+    chrome_bin = _find_chrome_binary()
+    if chrome_bin:
+        chrome_options.binary_location = chrome_bin
 
-    # Use manually installed ChromeDriver
+    chrome_options.add_argument("--headless=new")  # use headless mode
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--window-size=1920,1080")
+
+    # Use the chromedriver installed at /usr/bin/chromedriver by the CI workflow
     driver = webdriver.Chrome(service=Service("/usr/bin/chromedriver"), options=chrome_options)
     yield driver
     driver.quit()
@@ -71,9 +90,7 @@ def test_google_search(setup):
     driver = setup
     driver.get("https://practicetestautomation.com/practice-test-login/")
 
-    # Explicit waits instead of time.sleep
     wait = WebDriverWait(driver, 10)
-
     username_input = wait.until(EC.presence_of_element_located((By.NAME, "username")))
     username_input.send_keys("student")
 
@@ -83,7 +100,5 @@ def test_google_search(setup):
     submit_button = wait.until(EC.element_to_be_clickable((By.ID, "submit")))
     submit_button.click()
 
-    # Wait for page title or a success message element
     wait.until(EC.title_contains("Logged In Successfully"))
-
     assert "Logged In Successfully" in driver.title
