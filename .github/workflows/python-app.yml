@@ -49,68 +49,43 @@
 #           name: Selenium-HTML-Report
 #           path: reports/report.html
 
-name: Selenium Python Tests
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
 jobs:
   selenium-tests:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.12'
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install selenium webdriver-manager
 
-    - name: Install stable Chrome 117
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y wget unzip gnupg
-        wget -q -O google-chrome-stable_current_amd64.deb \
-          https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_117.0.5938.92-1_amd64.deb
-        sudo apt install -y ./google-chrome-stable_current_amd64.deb
-        google-chrome --version
+      - name: Run Selenium tests
+        run: |
+          python - <<EOF
+          from selenium import webdriver
+          from selenium.webdriver.chrome.service import Service
+          from selenium.webdriver.chrome.options import Options
+          from webdriver_manager.chrome import ChromeDriverManager
 
-    - name: Run Selenium tests
-      run: |
-        mkdir -p reports
-        python - <<EOF
-        from selenium import webdriver
-        from selenium.webdriver.chrome.service import Service
-        from selenium.webdriver.chrome.options import Options
-        from webdriver_manager.chrome import ChromeDriverManager
+          chrome_options = Options()
+          chrome_options.add_argument("--headless")
+          chrome_options.add_argument("--no-sandbox")
+          chrome_options.add_argument("--disable-dev-shm-usage")
 
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--window-size=1920,1080")
-
-        driver = webdriver.Chrome(
-            service=Service(ChromeDriverManager().install()),
-            options=chrome_options
-        )
-
-        # Example test: open google.com
-        driver.get("https://www.google.com")
-        print(driver.title)
-        driver.quit()
-        EOF
-
-    - name: Run PyTest with HTML report
-      run: |
-        mkdir -p reports
-        pytest tests/ --html=reports/report.html --self-contained-html
+          driver = webdriver.Chrome(
+              service=Service(ChromeDriverManager().install()),
+              options=chrome_options
+          )
+          driver.get("https://www.google.com")
+          print(driver.title)
+          driver.quit()
+          EOF
